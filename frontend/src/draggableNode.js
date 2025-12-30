@@ -1,25 +1,38 @@
-// draggableNode.js
-
 export const DraggableNode = ({ type, label, icon }) => {
-  const onDragStart = (event, nodeType) => {
-    const appData = { nodeType };
-    event.target.style.cursor = "grabbing";
+  const onDragStart = (event) => {
     event.dataTransfer.setData(
       "application/reactflow",
-      JSON.stringify(appData)
+      JSON.stringify({ nodeType: type })
     );
     event.dataTransfer.effectAllowed = "move";
   };
 
   return (
     <div
-      className={`text-gray-600 border-2 border-gray-300 rounded-lg min-w-24 min-h-20 gap-2 cursor-grab bg-white flex items-center justify-center flex-col p-2 flex-wrap ${type}`}
-      onDragStart={(event) => onDragStart(event, type)}
-      onDragEnd={(event) => (event.target.style.cursor = "grab")}
       draggable
+      onDragStart={onDragStart}
+      className="
+        group cursor-grab active:cursor-grabbing
+        rounded-lg border border-gray-200
+        bg-white px-3 py-3
+        flex flex-col items-center justify-center gap-2
+        transition-all duration-150
+        hover:shadow-md hover:border-blue-400
+      "
     >
-      <span className="text-2xl">{icon}</span>
-      <span className="text-sm">{label}</span>
+      <div
+        className="
+          text-xl text-gray-600
+          group-hover:text-blue-500
+          transition-colors
+        "
+      >
+        {icon}
+      </div>
+
+      <div className="text-xs font-medium text-gray-700 text-center">
+        {label}
+      </div>
     </div>
   );
 };

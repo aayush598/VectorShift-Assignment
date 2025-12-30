@@ -30,7 +30,9 @@ export const nodeSchemas = {
     label: 'Input',
     category: NODE_CATEGORIES.INPUT,
     description: 'Input data source',
-    icon: '📥',
+    icon: 'MdInput',
+    showInToolbar: true,
+    toolbarOrder: 1,
     fields: [
       {
         name: 'inputName',
@@ -65,7 +67,9 @@ export const nodeSchemas = {
     label: 'Output',
     category: NODE_CATEGORIES.OUTPUT,
     description: 'Output destination',
-    icon: '📤',
+    icon: 'MdOutlineOutput',
+    showInToolbar: true,
+    toolbarOrder: 2,
     fields: [
       {
         name: 'outputName',
@@ -100,7 +104,9 @@ export const nodeSchemas = {
     label: 'LLM',
     category: NODE_CATEGORIES.PROCESSOR,
     description: 'Large Language Model processor',
-    icon: '🤖',
+    icon: 'TbBoxModel2',
+    showInToolbar: true,
+    toolbarOrder: 3,
     fields: [
       {
         name: 'modelName',
@@ -139,7 +145,9 @@ export const nodeSchemas = {
     label: 'Text',
     category: NODE_CATEGORIES.INPUT,
     description: 'Static or dynamic text with variable support',
-    icon: '📝',
+    icon: 'CiText',
+    showInToolbar: true,
+    toolbarOrder: 4,
     fields: [
       {
         name: 'text',
@@ -173,7 +181,9 @@ export const nodeSchemas = {
     label: 'Filter',
     category: NODE_CATEGORIES.TRANSFORM,
     description: 'Filter data based on conditions',
-    icon: '🔍',
+    icon: 'TbFilter',
+    showInToolbar: true,
+    toolbarOrder: 5,
     fields: [
       {
         name: 'filterType',
@@ -216,7 +226,9 @@ export const nodeSchemas = {
     label: 'Merge',
     category: NODE_CATEGORIES.UTILITY,
     description: 'Combine multiple inputs',
-    icon: '🔀',
+    icon: 'MdMergeType',
+    showInToolbar: true,
+    toolbarOrder: 6,
     fields: [
       {
         name: 'mergeStrategy',
@@ -254,7 +266,9 @@ export const nodeSchemas = {
     label: 'Transform',
     category: NODE_CATEGORIES.TRANSFORM,
     description: 'Transform data format or structure',
-    icon: '⚡',
+    icon: 'TbTransform',
+    showInToolbar: true,
+    toolbarOrder: 7,
     fields: [
       {
         name: 'transformation',
@@ -289,7 +303,9 @@ export const nodeSchemas = {
     label: 'Delay',
     category: NODE_CATEGORIES.UTILITY,
     description: 'Add delay to data flow',
-    icon: '⏱️',
+    icon: 'MdOutlineTimer',
+    showInToolbar: true,
+    toolbarOrder: 8,
     fields: [
       {
         name: 'delayMs',
@@ -326,7 +342,9 @@ export const nodeSchemas = {
     label: 'Conditional',
     category: NODE_CATEGORIES.PROCESSOR,
     description: 'Route data based on conditions',
-    icon: '🔀',
+    icon: 'MdCallSplit',
+    showInToolbar: true,
+    toolbarOrder: 9,
     fields: [
       {
         name: 'condition',

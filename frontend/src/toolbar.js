@@ -1,59 +1,72 @@
-// toolbar.js
-
+import { useState } from "react";
 import { DraggableNode } from "./draggableNode";
-import { MdInput } from "react-icons/md";
-import { TbBoxModel2 } from "react-icons/tb";
-import { MdOutlineOutput } from "react-icons/md";
-import { CiText } from "react-icons/ci";
-import { GoNumber } from "react-icons/go";
-import { IoIosCheckboxOutline } from "react-icons/io";
-import { VscSymbolString } from "react-icons/vsc";
-import { IoColorPaletteOutline } from "react-icons/io5";
-import { TbMultiplier2X } from "react-icons/tb";
+import { getToolbarNodesByCategory } from "./config/toolbarRegistry";
+import { NODE_ICONS } from "./config/nodeIcons";
 
 export const PipelineToolbar = () => {
+  const [search, setSearch] = useState("");
+  const toolbarGroups = getToolbarNodesByCategory();
+
   return (
-    <div className="bg-white">
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-          boxShadow: "rgba(149, 157, 165, 0.2) 0px 8px 24px",
-          padding: "20px",
-          backgroundColor: "white",
-        }}
-      >
-        <DraggableNode type="input" label="Input" icon={<MdInput />} />
-        <DraggableNode type="llm" label="LLM" icon={<TbBoxModel2 />} />
-        <DraggableNode
-          type="output"
-          label="Output"
-          icon={<MdOutlineOutput />}
-        />
-        <DraggableNode type="text" label="Text" icon={<CiText />} />
-        <DraggableNode type="numberInput" label="Input" icon={<GoNumber />} />
-        <DraggableNode
-          type="checkboxNode"
-          label="Checkbox"
-          icon={<IoIosCheckboxOutline />}
-        />
-        <DraggableNode
-          type="stringConcatenate"
-          label="Concatenate"
-          icon={<VscSymbolString />}
-        />
-        <DraggableNode
-          type="colorPicker"
-          label="Color"
-          icon={<IoColorPaletteOutline />}
-        />
-        <DraggableNode
-          type="multiplierNode"
-          label="Multiplier"
-          icon={<TbMultiplier2X />}
+    <aside className="w-72 h-screen bg-gray-50 border-r border-gray-200 flex flex-col">
+      
+      {/* Header */}
+      <div className="px-4 py-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800">Nodes</h2>
+        <p className="text-xs text-gray-500 mt-1">
+          Drag nodes onto the canvas
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className="px-4 py-3 border-b border-gray-200">
+        <input
+          type="text"
+          placeholder="Search nodes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="
+            w-full px-3 py-2 text-sm
+            border border-gray-300 rounded-md
+            focus:outline-none focus:ring-2 focus:ring-blue-500
+            bg-white
+          "
         />
       </div>
-    </div>
+
+      {/* Node List */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+        {Object.entries(toolbarGroups).map(([category, nodes]) => {
+          const filteredNodes = nodes.filter((node) =>
+            node.label.toLowerCase().includes(search.toLowerCase())
+          );
+
+          if (filteredNodes.length === 0) return null;
+
+          return (
+            <section key={category}>
+              <div className="mb-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                {category}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {filteredNodes.map((node) => {
+                  const Icon = NODE_ICONS[node.icon];
+
+                  return (
+                    <DraggableNode
+                      key={node.type}
+                      type={node.type}
+                      label={node.label}
+                      icon={Icon ? <Icon /> : null}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </aside>
   );
 };
