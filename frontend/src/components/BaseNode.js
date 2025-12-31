@@ -4,6 +4,7 @@ import { Handle, Position } from "reactflow";
 import { useState, useEffect } from "react";
 import FieldRenderer from "./FieldRenderer";
 import { useDynamicHandles } from "../hooks/useDynamicHandles";
+import { useStore } from "../store";
 
 /**
  * BaseNode - Universal node renderer
@@ -13,9 +14,7 @@ import { useDynamicHandles } from "../hooks/useDynamicHandles";
  */
 export const BaseNode = ({ id, data, type }) => {
   const schema = data?.schema;
-  
-  
-
+  const updateNodeField = useStore(state => state.updateNodeField); 
   const [nodeData, setNodeData] = useState({});
   
   // Dynamic handles for Text node variable parsing
@@ -37,6 +36,10 @@ export const BaseNode = ({ id, data, type }) => {
 
     if (Object.keys(initialData).length > 0) {
       setNodeData(prevData => ({ ...prevData, ...initialData }));
+      // Sync with global store
+      Object.entries(initialData).forEach(([fieldName, value]) => {
+        updateNodeField(id, fieldName, value);
+      });
     }
   }, [id, schema.fields]);
 
@@ -53,12 +56,17 @@ export const BaseNode = ({ id, data, type }) => {
       ...prevData,
       [fieldName]: value,
     }));
+    // Sync with global store
+    updateNodeField(id, fieldName, value);
   };
 
   // Determine input handles (static or dynamic)
-  const inputHandles = dynamicHandles.inputs.length > 0 
-    ? dynamicHandles.inputs 
-    : schema.handles?.inputs || [];
+  const inputHandles = dynamicHandles.inputs.length > 0
+    ? dynamicHandles.inputs
+    : Array.isArray(schema.handles?.inputs)
+      ? schema.handles.inputs
+      : [];
+
   
   const outputHandles = schema.handles?.outputs || [];
 

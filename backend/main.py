@@ -1,8 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Any, Optional
 import networkx as nx
@@ -33,33 +31,25 @@ limiter = Limiter(key_func=get_remote_address)
 # CONFIGURATION & CONSTANTS
 # ============================================================================
 class Config:
-    # Graph limits for security
     MAX_NODES = 10000
     MAX_EDGES = 50000
     MAX_NODE_ID_LENGTH = 256
     MAX_EDGE_ID_LENGTH = 256
-    
-    # Performance
     ENABLE_CACHING = True
-    CACHE_TTL = 300  # 5 minutes
-    
-    # Security
+    CACHE_TTL = 300
     ALLOWED_ORIGINS = [
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
-        # Add production domains here
     ]
-    
-    # Rate limiting (requests per minute)
     RATE_LIMIT_ANONYMOUS = "100/minute"
     RATE_LIMIT_PARSE = "50/minute"
 
 config = Config()
 
 # ============================================================================
-# IN-MEMORY CACHE (For production, use Redis)
+# IN-MEMORY CACHE
 # ============================================================================
 class SimpleCache:
     def __init__(self):
@@ -79,9 +69,7 @@ class SimpleCache:
         return None
     
     def set(self, key: str, value: Any):
-        # Limit cache size to prevent memory issues
         if len(self.cache) > 1000:
-            # Remove oldest entries
             sorted_items = sorted(self.cache.items(), key=lambda x: x[1][1])
             for k, _ in sorted_items[:200]:
                 del self.cache[k]
@@ -107,12 +95,10 @@ cache = SimpleCache()
 # ============================================================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     logger.info("🚀 Pipeline Analysis API starting up...")
     logger.info(f"📊 Max nodes: {config.MAX_NODES}, Max edges: {config.MAX_EDGES}")
     logger.info(f"⚡ Cache enabled: {config.ENABLE_CACHING}")
     yield
-    # Shutdown
     logger.info("🛑 Pipeline Analysis API shutting down...")
     cache.clear()
 
@@ -129,15 +115,12 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
-# Add rate limiter to app state
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ============================================================================
 # SECURITY MIDDLEWARE
 # ============================================================================
-
-# CORS - Restrict origins in production
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.ALLOWED_ORIGINS,
@@ -147,39 +130,25 @@ app.add_middleware(
     max_age=3600,
 )
 
-# Gzip compression for responses > 1KB
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Trusted Host (prevents host header attacks)
-# app.add_middleware(
-#     TrustedHostMiddleware, 
-#     allowed_hosts=["localhost", "127.0.0.1", "yourdomain.com"]
-# )
-
 # ============================================================================
-# REQUEST/RESPONSE LOGGING MIDDLEWARE
+# REQUEST LOGGING MIDDLEWARE
 # ============================================================================
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
-    
-    # Log request
     logger.info(f"📥 {request.method} {request.url.path} - Client: {request.client.host}")
     
     try:
         response = await call_next(request)
         process_time = time.time() - start_time
-        
-        # Add performance header
         response.headers["X-Process-Time"] = str(process_time)
-        
-        # Log response
         logger.info(
             f"📤 {request.method} {request.url.path} - "
             f"Status: {response.status_code} - "
             f"Time: {process_time:.3f}s"
         )
-        
         return response
     except Exception as e:
         process_time = time.time() - start_time
@@ -191,7 +160,7 @@ async def log_requests(request: Request, call_next):
         raise
 
 # ============================================================================
-# PYDANTIC MODELS WITH VALIDATION
+# PYDANTIC MODELS
 # ============================================================================
 class Node(BaseModel):
     id: str = Field(..., description="Unique identifier for the node")
@@ -239,30 +208,25 @@ class Pipeline(BaseModel):
     def validate_nodes(cls, v):
         if len(v) > config.MAX_NODES:
             raise ValueError(f"Pipeline exceeds maximum node limit of {config.MAX_NODES}")
-        
-        # Check for duplicate node IDs
         node_ids = [node.id for node in v]
         if len(node_ids) != len(set(node_ids)):
             raise ValueError("Duplicate node IDs detected")
-        
         return v
     
     @validator('edges')
     def validate_edges(cls, v):
         if len(v) > config.MAX_EDGES:
             raise ValueError(f"Pipeline exceeds maximum edge limit of {config.MAX_EDGES}")
-        
-        # Check for duplicate edge IDs
         edge_ids = [edge.id for edge in v]
         if len(edge_ids) != len(set(edge_ids)):
             raise ValueError("Duplicate edge IDs detected")
-        
         return v
 
 class PipelineResponse(BaseModel):
     num_nodes: int = Field(..., description="Total number of nodes")
     num_edges: int = Field(..., description="Total number of edges")
     is_dag: bool = Field(..., description="Whether the pipeline is a DAG")
+    cycle: Optional[List[str]] = Field(None, description="Cycle path if not DAG")
     cache_hit: bool = Field(default=False, description="Whether result was cached")
     process_time: float = Field(..., description="Processing time in seconds")
 
@@ -270,7 +234,6 @@ class HealthResponse(BaseModel):
     status: str
     timestamp: datetime
     version: str
-    uptime: str
 
 class MetricsResponse(BaseModel):
     cache_stats: Dict[str, Any]
@@ -280,40 +243,31 @@ class MetricsResponse(BaseModel):
 # UTILITY FUNCTIONS
 # ============================================================================
 def generate_cache_key(pipeline: Pipeline) -> str:
-    """Generate deterministic cache key from pipeline structure"""
-    # Sort nodes and edges for consistency
     nodes_str = '|'.join(sorted([f"{n.id}:{n.type}" for n in pipeline.nodes]))
     edges_str = '|'.join(sorted([f"{e.source}->{e.target}" for e in pipeline.edges]))
     cache_input = f"{nodes_str}::{edges_str}"
     return hashlib.sha256(cache_input.encode()).hexdigest()
 
-def analyze_pipeline_graph(pipeline: Pipeline) -> tuple[int, int, bool]:
-    """
-    Core graph analysis logic - optimized for performance
-    
-    Returns:
-        tuple: (num_nodes, num_edges, is_dag)
-    """
+def analyze_pipeline_graph(pipeline: Pipeline) -> tuple[int, int, bool, Optional[List[str]]]:
     num_nodes = len(pipeline.nodes)
     num_edges = len(pipeline.edges)
     
-    # Empty graph is a DAG
     if num_nodes == 0:
-        return (0, 0, True)
+        return (0, 0, True, None)
     
-    # Build node ID set for O(1) lookup
     node_ids = {node.id for node in pipeline.nodes}
-    
-    # Create directed graph (optimized)
     G = nx.DiGraph()
-    
-    # Add all nodes at once (faster than one-by-one)
     G.add_nodes_from(node_ids)
     
-    # Validate and add edges
     edge_list = []
     for edge in pipeline.edges:
-        # Validate edge references
+        # Reject self-loops
+        if edge.source == edge.target:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Self-loops are not allowed: {edge.source} -> {edge.target}"
+            )
+        
         if edge.source not in node_ids:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -326,22 +280,30 @@ def analyze_pipeline_graph(pipeline: Pipeline) -> tuple[int, int, bool]:
             )
         edge_list.append((edge.source, edge.target))
     
-    # Add all edges at once (faster than one-by-one)
     G.add_edges_from(edge_list)
     
-    # DAG validation using optimized NetworkX algorithm
     is_dag = nx.is_directed_acyclic_graph(G)
+    cycle = None
     
-    return (num_nodes, num_edges, is_dag)
+    # If not DAG, find one cycle
+    if not is_dag:
+        try:
+            cycle_edges = nx.find_cycle(G, orientation='original')
+            cycle = [edge[0] for edge in cycle_edges]
+            # Close the cycle
+            if cycle:
+                cycle.append(cycle[0])
+        except nx.NetworkXNoCycle:
+            pass
+    
+    return (num_nodes, num_edges, is_dag, cycle)
 
 # ============================================================================
 # API ENDPOINTS
 # ============================================================================
-
 @app.get("/", tags=["Health"])
 @limiter.limit(config.RATE_LIMIT_ANONYMOUS)
 async def root(request: Request):
-    """Root endpoint - API information"""
     return {
         "service": "Pipeline Analysis API",
         "version": "2.0.0",
@@ -353,18 +315,15 @@ async def root(request: Request):
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 @limiter.limit(config.RATE_LIMIT_ANONYMOUS)
 async def health_check(request: Request):
-    """Health check endpoint for monitoring and load balancers"""
     return HealthResponse(
         status="healthy",
         timestamp=datetime.utcnow(),
-        version="2.0.0",
-        uptime="N/A"  # In production, calculate from startup time
+        version="2.0.0"
     )
 
 @app.get("/metrics", response_model=MetricsResponse, tags=["Monitoring"])
 @limiter.limit("20/minute")
 async def get_metrics(request: Request):
-    """Internal metrics endpoint"""
     return MetricsResponse(
         cache_stats=cache.stats(),
         config={
@@ -383,32 +342,10 @@ async def get_metrics(request: Request):
 )
 @limiter.limit(config.RATE_LIMIT_PARSE)
 async def parse_pipeline(request: Request, pipeline: Pipeline):
-    """
-    Analyze pipeline structure and validate graph properties.
-    
-    **Features:**
-    - Node and edge counting
-    - DAG validation (cycle detection)
-    - Structural validation
-    - Result caching for performance
-    - Rate limiting for protection
-    
-    **Limits:**
-    - Max nodes: 10,000
-    - Max edges: 50,000
-    - Rate limit: 50 requests/minute per IP
-    
-    **Security:**
-    - Input validation
-    - Size limits
-    - Duplicate detection
-    - Reference validation
-    """
     start_time = time.time()
     cache_hit = False
     
     try:
-        # Check cache first
         if config.ENABLE_CACHING:
             cache_key = generate_cache_key(pipeline)
             cached_result = cache.get(cache_key)
@@ -416,24 +353,22 @@ async def parse_pipeline(request: Request, pipeline: Pipeline):
             if cached_result is not None:
                 logger.info(f"✅ Cache hit for pipeline")
                 cache_hit = True
-                num_nodes, num_edges, is_dag = cached_result
+                num_nodes, num_edges, is_dag, cycle = cached_result
                 process_time = time.time() - start_time
                 
                 return PipelineResponse(
                     num_nodes=num_nodes,
                     num_edges=num_edges,
                     is_dag=is_dag,
+                    cycle=cycle,
                     cache_hit=cache_hit,
                     process_time=process_time
                 )
         
-        # Analyze pipeline
         logger.info(f"🔍 Analyzing pipeline: {len(pipeline.nodes)} nodes, {len(pipeline.edges)} edges")
-        num_nodes, num_edges, is_dag = analyze_pipeline_graph(pipeline)
-        
-        # Cache result
+        num_nodes, num_edges, is_dag, cycle = analyze_pipeline_graph(pipeline)
         if config.ENABLE_CACHING:
-            cache.set(cache_key, (num_nodes, num_edges, is_dag))
+            cache.set(cache_key, (num_nodes, num_edges, is_dag, cycle))
         
         process_time = time.time() - start_time
         logger.info(f"✅ Analysis complete: DAG={is_dag}, Time={process_time:.3f}s")
@@ -442,6 +377,7 @@ async def parse_pipeline(request: Request, pipeline: Pipeline):
             num_nodes=num_nodes,
             num_edges=num_edges,
             is_dag=is_dag,
+            cycle=cycle,
             cache_hit=cache_hit,
             process_time=process_time
         )
@@ -460,45 +396,3 @@ async def parse_pipeline(request: Request, pipeline: Pipeline):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during pipeline analysis"
         )
-
-# ============================================================================
-# ERROR HANDLERS
-# ============================================================================
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    """Custom HTTP exception handler"""
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": exc.detail,
-            "status_code": exc.status_code,
-            "timestamp": datetime.utcnow().isoformat()
-        }
-    )
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    """Catch-all exception handler"""
-    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": "Internal server error",
-            "status_code": 500,
-            "timestamp": datetime.utcnow().isoformat()
-        }
-    )
-
-# ============================================================================
-# STARTUP MESSAGE
-# ============================================================================
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )

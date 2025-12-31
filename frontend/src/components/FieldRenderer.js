@@ -1,5 +1,7 @@
 // frontend/src/components/FieldRenderer.js
 
+import { useRef, useEffect } from 'react';
+
 /**
  * FieldRenderer - Generic field component
  * 
@@ -7,12 +9,22 @@
  * Supports: text, textarea, select, number, checkbox, color
  */
 const FieldRenderer = ({ field, value, onChange, label }) => {
+  const textareaRef = useRef(null);
+
   const handleChange = (e) => {
     const newValue = field.type === 'checkbox' 
       ? e.target.checked 
       : e.target.value;
     onChange(field.name, newValue);
   };
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    if (field.type === 'textarea' && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+    }
+  }, [value, field.type]);
 
   const commonClasses = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all";
 
@@ -43,12 +55,14 @@ const FieldRenderer = ({ field, value, onChange, label }) => {
             {field.required && <span className="text-red-500 ml-1">*</span>}
           </label>
           <textarea
+            ref={textareaRef}
             value={value || ''}
             onChange={handleChange}
             placeholder={field.placeholder}
             rows={field.rows || 3}
-            className={`${commonClasses} resize-y`}
+            className={`${commonClasses} resize-none overflow-hidden`}
             required={field.required}
+            style={{ minHeight: '60px' }}
           />
         </div>
       );

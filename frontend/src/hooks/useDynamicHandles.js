@@ -34,11 +34,16 @@ export const useDynamicHandles = (schema, nodeData) => {
 
       // Create handles for each unique variable
       const varsArray = Array.from(variables);
-      result.inputs = varsArray.map((varName, index) => ({
-        id: `${varName}`,
-        label: varName,
-        position: ((index + 1) * 100) / (varsArray.length + 1)
-      }));
+      result.inputs = varsArray.map((varName, index) => {
+        // Sanitize variable name for safe handle ID
+        const safeId = varName.replace(/[^a-zA-Z0-9_]/g, "_");
+        
+        return {
+          id: safeId,
+          label: varName, // Keep original for display
+          position: ((index + 1) * 100) / (varsArray.length + 1)
+        };
+      });
     }
 
     return result;
