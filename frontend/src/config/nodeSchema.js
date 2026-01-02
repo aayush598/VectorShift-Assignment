@@ -8,11 +8,11 @@
  */
 
 export const NODE_CATEGORIES = {
-  INPUT: 'input',
-  OUTPUT: 'output',
-  PROCESSOR: 'processor',
-  TRANSFORM: 'transform',
-  UTILITY: 'utility'
+  INPUT: 'Input',
+  OUTPUT: 'Output',
+  PROCESSOR: 'Processor',
+  TRANSFORM: 'Transform',
+  UTILITY: 'Utility'
 };
 
 export const FIELD_TYPES = {

@@ -47,7 +47,7 @@ export const PipelineToolbar = () => {
         
 
         {/* Categories */}
-        <div className="flex gap-2">
+        <div className="flex gap-6 items-center">
           {categories.map((category) => {
             const isActive = category === selectedCategory;
 
@@ -56,12 +56,13 @@ export const PipelineToolbar = () => {
                 key={category}
                 onClick={() => setActiveCategory(category)}
                 className={`
-                  px-3 py-1.5 text-sm rounded-md border
+                  text-sm font-medium
+                  pb-1
                   transition-colors
                   ${
                     isActive
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                      ? "text-[#6366f1] border-b-2 border-[#6366f1]"
+                      : "text-gray-600 border-b-2 border-transparent hover:text-[#6366f1]"
                   }
                 `}
               >
@@ -70,6 +71,7 @@ export const PipelineToolbar = () => {
             );
           })}
         </div>
+
       </div>
 
       {/* Node Grid */}
