@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { DraggableNode } from "./draggableNode";
 import { getToolbarNodesByCategory } from "./config/toolbarRegistry";
 import { NODE_ICONS } from "./config/nodeIcons";
+import { CiSearch } from "react-icons/ci";
 
 export const PipelineToolbar = () => {
   const [search, setSearch] = useState("");
@@ -24,17 +25,26 @@ export const PipelineToolbar = () => {
       {/* Top Bar */}
       <div className="flex items-center gap-4 px-6 py-3">
         {/* Search */}
-        <input
-          type="text"
-          placeholder="Search nodes..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="
-            w-64 px-3 py-2 text-sm
-            border border-gray-300 rounded-md
-            focus:outline-none focus:ring-2 focus:ring-blue-500
-          "
-        />
+        <div className="relative w-64">
+          <CiSearch
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+
+          <input
+            type="text"
+            placeholder="Search nodes..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="
+              w-full pl-9 pr-3 py-2 text-sm
+              border border-gray-300 rounded-md
+              focus:outline-none focus:ring-2 focus:ring-blue-500
+            "
+          />
+        </div>
+
+        
 
         {/* Categories */}
         <div className="flex gap-2">
