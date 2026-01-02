@@ -81,7 +81,7 @@ export const PipelineToolbar = () => {
             No nodes found in this category.
           </div>
         ) : (
-          <div className="grid grid-cols-6 gap-4">
+          <div className="grid grid-cols-12 gap-4">
             {filteredNodes.map((node) => {
               const Icon = NODE_ICONS[node.icon];
 

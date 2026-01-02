@@ -4,9 +4,12 @@ import { SubmitButton } from "./submit";
 
 function App() {
   return (
-    <div className="flex h-screen">
+    <div className="flex flex-col h-screen">
+      {/* Top Toolbar */}
       <PipelineToolbar />
-      <div className="flex-1">
+
+      {/* Canvas Area */}
+      <div className="flex-1 relative">
         <PipelineUI />
         <SubmitButton />
       </div>
