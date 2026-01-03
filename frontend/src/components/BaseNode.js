@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import FieldRenderer from "./FieldRenderer";
 import { useDynamicHandles } from "../hooks/useDynamicHandles";
 import { useStore } from "../store";
+import { NODE_ICONS } from "../config/nodeIcons";
 
 /**
  * BaseNode - Universal node renderer
@@ -19,6 +20,8 @@ export const BaseNode = ({ id, data, type }) => {
   
   // Dynamic handles for Text node variable parsing
   const dynamicHandles = useDynamicHandles(schema, nodeData);
+
+  const IconComponent = NODE_ICONS[schema?.icon];
 
   // Initialize field values with defaults
   useEffect(() => {
@@ -89,7 +92,11 @@ export const BaseNode = ({ id, data, type }) => {
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        {schema.icon && <span className="text-xl">{schema.icon}</span>}
+        {IconComponent && (
+          <span className="text-xl" style={{ color: schema.style?.color }}>
+            <IconComponent />
+          </span>
+        )}
         <span className="font-semibold text-lg" style={{ color: schema.style?.color }}>
           {schema.label}
         </span>
