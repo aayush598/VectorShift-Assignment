@@ -123,7 +123,8 @@ export const BaseNode = ({ id, data, type }) => {
           position={Position.Left}
           id={handle.id}
           style={{
-            top: handle.position ? `${handle.position}%` : `${((index + 1) * 100) / (inputHandles.length + 1)}%`,
+            right: '-6px',
+            top: handle.position ? `${handle.position}%` : '50%',
             background: '#fff',
             width: '12px',
             height: '12px',
@@ -141,7 +142,8 @@ export const BaseNode = ({ id, data, type }) => {
           position={Position.Right}
           id={handle.id}
           style={{
-            top: handle.position ? `${handle.position}%` : `${((index + 1) * 100) / (outputHandles.length + 1)}%`,
+            left: '-6px',
+            top: handle.position ? `${handle.position}%` : '50%',
             background: '#fff',
             width: '12px',
             height: '12px',
