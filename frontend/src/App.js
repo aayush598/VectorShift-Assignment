@@ -4,14 +4,21 @@ import { SubmitButton } from "./submit";
 
 function App() {
   return (
-    <div className="flex flex-col h-screen">
-      {/* Top Toolbar */}
-      <PipelineToolbar />
+    <div className="relative w-screen h-screen overflow-hidden bg-gray-50">
+      {/* Canvas Area - Now full screen */}
+      <PipelineUI />
 
-      {/* Canvas Area */}
-      <div className="flex-1 relative">
-        <PipelineUI />
-        <SubmitButton />
+      {/* Overlay UI Layer */}
+      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-4">
+        {/* Top Overlay: Toolbar */}
+        <div className="pointer-events-auto">
+          <PipelineToolbar />
+        </div>
+
+        {/* Bottom Overlay: Submit Button */}
+        <div className="pointer-events-auto flex justify-center mb-6">
+          <SubmitButton />
+        </div>
       </div>
     </div>
   );
