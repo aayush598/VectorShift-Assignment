@@ -1,3 +1,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Remove all default styling from the React Flow wrapper */
+.react-flow__node {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Ensure the selection blue border is also removed if you don't want it */
+.react-flow__node.selected {
+  box-shadow: none !important;
+}
+
+/* Optional: If the handles are still slightly off, 
+   ensure the handles are positioned relative to your node's border */
+.react-flow__handle {
+  z-index: 10;
+}
