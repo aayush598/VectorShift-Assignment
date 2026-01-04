@@ -4,6 +4,7 @@ import { useStore } from "./store";
 import { shallow } from "zustand/shallow";
 import { Button } from "@nextui-org/react";
 import { getNodeSchema } from "./config/nodeSchema";
+import { API_BASE_URL } from "./config/api";
 
 export const SubmitButton = () => {
   const { nodes, edges } = useStore(
@@ -55,7 +56,7 @@ export const SubmitButton = () => {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/pipelines/parse",
+        `${API_BASE_URL}/pipelines/parse`,
         {
           method: "POST",
           headers: {

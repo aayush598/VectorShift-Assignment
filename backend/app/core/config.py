@@ -1,4 +1,8 @@
 # app/core/config.py
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 class Settings:
     # ===============================
@@ -24,7 +28,12 @@ class Settings:
     # ===============================
     # CORS
     # ===============================
+    FRONTEND_URL = os.getenv(
+        "FRONTEND_URL",
+        "http://localhost:3000"
+    )
     ALLOWED_ORIGINS = [
+        FRONTEND_URL,
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:3000",

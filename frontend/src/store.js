@@ -3,7 +3,6 @@ import {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
-  MarkerType,
 } from "reactflow";
 
 export const useStore = create((set, get) => ({
