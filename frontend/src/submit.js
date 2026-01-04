@@ -133,7 +133,7 @@ export const SubmitButton = () => {
   };
 
   return (
-    <div className="flex items-center justify-center fixed bottom-10 left-0 right-0">
+    <div className="inline-flex items-center justify-center">
       <Button onClick={handleSubmit} color="primary" size="lg" type="submit">
         Submit Pipeline
       </Button>
@@ -152,4 +152,5 @@ export const SubmitButton = () => {
       />
     </div>
   );
+
 };

@@ -16,7 +16,7 @@ function App() {
         </div>
 
         {/* Bottom Overlay: Submit Button */}
-        <div className="pointer-events-auto flex justify-center mb-6">
+        <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2">
           <SubmitButton />
         </div>
       </div>

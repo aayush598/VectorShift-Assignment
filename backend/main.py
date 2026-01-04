@@ -130,7 +130,7 @@ app.add_middleware(
     max_age=3600,
 )
 
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # ============================================================================
 # REQUEST LOGGING MIDDLEWARE
@@ -182,17 +182,10 @@ class Node(BaseModel):
         return v
 
 class Edge(BaseModel):
-    id: str = Field(..., description="Unique identifier for the edge")
     source: str = Field(..., description="Source node ID")
     target: str = Field(..., description="Target node ID")
-    
-    @validator('id')
-    def validate_id(cls, v):
-        if len(v) > config.MAX_EDGE_ID_LENGTH:
-            raise ValueError(f"Edge ID exceeds maximum length of {config.MAX_EDGE_ID_LENGTH}")
-        if not v.strip():
-            raise ValueError("Edge ID cannot be empty")
-        return v
+    sourceHandle: Optional[str] = None
+    targetHandle: Optional[str] = None
     
     @validator('source', 'target')
     def validate_node_refs(cls, v):
@@ -213,13 +206,18 @@ class Pipeline(BaseModel):
             raise ValueError("Duplicate node IDs detected")
         return v
     
-    @validator('edges')
+    @validator("edges")
     def validate_edges(cls, v):
         if len(v) > config.MAX_EDGES:
-            raise ValueError(f"Pipeline exceeds maximum edge limit of {config.MAX_EDGES}")
-        edge_ids = [edge.id for edge in v]
-        if len(edge_ids) != len(set(edge_ids)):
-            raise ValueError("Duplicate edge IDs detected")
+            raise ValueError(
+                f"Pipeline exceeds maximum edge limit of {config.MAX_EDGES}"
+            )
+        return v
+    
+    @validator("nodes", "edges")
+    def non_null_lists(cls, v):
+        if v is None:
+            raise ValueError("nodes and edges must be provided")
         return v
 
 class PipelineResponse(BaseModel):
@@ -244,59 +242,62 @@ class MetricsResponse(BaseModel):
 # ============================================================================
 def generate_cache_key(pipeline: Pipeline) -> str:
     nodes_str = '|'.join(sorted([f"{n.id}:{n.type}" for n in pipeline.nodes]))
-    edges_str = '|'.join(sorted([f"{e.source}->{e.target}" for e in pipeline.edges]))
+    edges_str = "|".join(
+        sorted(
+            f"{e.source}:{e.sourceHandle}->{e.target}:{e.targetHandle}"
+            for e in pipeline.edges
+        )
+    )
     cache_input = f"{nodes_str}::{edges_str}"
     return hashlib.sha256(cache_input.encode()).hexdigest()
 
-def analyze_pipeline_graph(pipeline: Pipeline) -> tuple[int, int, bool, Optional[List[str]]]:
+def analyze_pipeline_graph(
+    pipeline: Pipeline
+) -> tuple[int, int, bool, Optional[List[str]]]:
+
     num_nodes = len(pipeline.nodes)
     num_edges = len(pipeline.edges)
-    
+
     if num_nodes == 0:
-        return (0, 0, True, None)
-    
+        return 0, 0, True, None
+
     node_ids = {node.id for node in pipeline.nodes}
-    G = nx.DiGraph()
+    G = nx.MultiDiGraph()
     G.add_nodes_from(node_ids)
-    
-    edge_list = []
+
     for edge in pipeline.edges:
-        # Reject self-loops
         if edge.source == edge.target:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Self-loops are not allowed: {edge.source} -> {edge.target}"
+                status_code=400,
+                detail=f"Self-loop detected: {edge.source}"
             )
-        
+
         if edge.source not in node_ids:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Edge references non-existent source node: {edge.source}"
+                status_code=400,
+                detail=f"Unknown source node: {edge.source}"
             )
+
         if edge.target not in node_ids:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Edge references non-existent target node: {edge.target}"
+                status_code=400,
+                detail=f"Unknown target node: {edge.target}"
             )
-        edge_list.append((edge.source, edge.target))
-    
-    G.add_edges_from(edge_list)
-    
-    is_dag = nx.is_directed_acyclic_graph(G)
-    cycle = None
-    
-    # If not DAG, find one cycle
-    if not is_dag:
-        try:
-            cycle_edges = nx.find_cycle(G, orientation='original')
-            cycle = [edge[0] for edge in cycle_edges]
-            # Close the cycle
-            if cycle:
-                cycle.append(cycle[0])
-        except nx.NetworkXNoCycle:
-            pass
-    
-    return (num_nodes, num_edges, is_dag, cycle)
+
+        G.add_edge(
+            edge.source,
+            edge.target,
+            sourceHandle=edge.sourceHandle,
+            targetHandle=edge.targetHandle
+        )
+
+    try:
+        cycle_edges = nx.find_cycle(G, orientation="original")
+        cycle = [e[0] for e in cycle_edges]
+        cycle.append(cycle_edges[0][0])
+        return num_nodes, num_edges, False, cycle
+    except nx.NetworkXNoCycle:
+        return num_nodes, num_edges, True, None
 
 # ============================================================================
 # API ENDPOINTS

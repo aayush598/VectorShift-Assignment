@@ -151,7 +151,7 @@ export const BaseNode = ({ id, data, type }) => {
           style={{
             top: handle.position ? `${handle.position}%` : '50%',
             right: -6,
-            background: '#fff',
+            background: '#fff', 
             width: '12px',
             height: '12px',
             border: `2px solid ${schema.style?.color || '#3b82f6'}`,
