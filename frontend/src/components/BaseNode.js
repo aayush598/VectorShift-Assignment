@@ -87,7 +87,7 @@ export const BaseNode = ({ id, data, type }) => {
 
   return (
     <div
-      className={`px-5 py-4 w-80 border-2 shadow-lg rounded-lg transition-all hover:shadow-xl ${nodeClasses}`}
+      className={`relative px-5 py-4 w-80 border-2 shadow-lg rounded-lg transition-all hover:shadow-xl ${nodeClasses}`}
       style={{ minHeight: '120px' }}
     >
       {/* Header */}
@@ -130,8 +130,8 @@ export const BaseNode = ({ id, data, type }) => {
           position={Position.Left}
           id={handle.id}
           style={{
-            right: '-6px',
             top: handle.position ? `${handle.position}%` : '50%',
+            left: -6,
             background: '#fff',
             width: '12px',
             height: '12px',
@@ -149,8 +149,8 @@ export const BaseNode = ({ id, data, type }) => {
           position={Position.Right}
           id={handle.id}
           style={{
-            left: '-6px',
             top: handle.position ? `${handle.position}%` : '50%',
+            right: -6,
             background: '#fff',
             width: '12px',
             height: '12px',
