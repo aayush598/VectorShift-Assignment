@@ -1,112 +1,245 @@
-# VectorShift Frontend Technical Assessment
+# VectorShift Pipeline Builder & Analyzer
 
+A full-stack application for visually building data pipelines and validating them as **Directed Acyclic Graphs (DAGs)**.
+The system includes a **React + React Flow frontend** and a **FastAPI backend** that performs graph analysis, caching, and validation.
 
-## Assignment Overview
+This project was built as part of the **VectorShift Frontend Technical Assessment**, with additional production-grade backend architecture, testing, and CI.
 
-This repository contains the solution to the **VectorShift Frontend Technical Assessment**. The project consists of a frontend built using **React** and a backend implemented with **FastAPI**. The goal of this project is to create a flexible and reusable node abstraction, enhance the styling, improve the text node logic, and integrate the frontend with the backend for pipeline submission.
+---
 
-## Project Structure
+## Features
 
+### Frontend
 
-### How to Run
+* Visual pipeline editor built with **React Flow**
+* Schema-driven, extensible node system
+* Dynamic node handles (e.g. `{{variable}}` parsing in Text nodes)
+* Auto-resizing text nodes
+* Category-based node toolbar
+* Modern UI with TailwindCSS
+* Pipeline submission with validation feedback
 
-1. **Frontend**:
-   - Navigate to the `/frontend` folder.
-   - Run the following commands:
-     ```bash
-     npm install
-     npm start
-     ```
-   - The frontend will start on `http://localhost:3000`.
+### Backend
 
-2. **Backend**:
-   - Navigate to the `/backend` folder.
-   - Run the following command:
-     ```bash
-     uvicorn main:app --reload
-     ```
-   - The backend will start on `http://localhost:8000`.
+* **FastAPI** service for pipeline analysis
+* DAG detection using **NetworkX**
+* Rate limiting with **SlowAPI**
+* In-memory caching (Redis-ready abstraction)
+* Request logging middleware
+* Health & metrics endpoints
+* Fully modular, scalable architecture
+* Comprehensive **pytest** test suite
+* Dockerized for production
+* CI with GitHub Actions
 
-## Part 1: Node Abstraction
+---
 
-A reusable and flexible node abstraction was created to simplify building new nodes. This abstraction allows you to easily add new nodes by defining the following:
+## Repository Structure
 
-- **Input Handles** and **Output Handles**
-- Customizable fields (e.g., text inputs, dropdowns)
-- Shared UI components across different node types
-
-### New Nodes Created:
-- Checkbox Node
-- Color Picker Node
-- Input Node
-- String Concatenate Node
-- Multiplier Node
-
-## Part 2: Styling
-
-Styling was applied using **TailwindCSS** and **NextUI** to create a modern and clean interface. The design prioritizes usability, with proper visual cues for node connections and interactive components.
-
-### Features:
-- Drag-and-drop pipeline builder
-- Interactive components with smooth transitions and hover effects
-
-## Part 3: Text Node Logic
-
-The **Text Node** was improved with the following functionality:
-
-1. **Dynamic Resizing**: The node adjusts its width and height based on the text input to improve visibility.
-2. **Variable Detection**: Users can define variables inside double curly braces (`{{ variable }}`). The node automatically generates input handles for these variables, allowing them to interact with other nodes.
-
-## Part 4: Backend Integration
-
-The frontend is integrated with the **FastAPI** backend. When a pipeline is submitted, the frontend sends the nodes and edges to the backend. The backend performs the following:
-
-- Calculates the number of nodes and edges.
-- Checks if the pipeline forms a **Directed Acyclic Graph (DAG)** using **NetworkX**.
-- Returns a result to the frontend, which displays it via a toast notification.
-
-### Backend Endpoint:
-```http
-POST /pipelines/parse
+```text
+.
+├── frontend/
+│   ├── src/
+│   │   ├── nodes/              # Node factory & schemas
+│   │   ├── components/         # BaseNode, FieldRenderer
+│   │   ├── hooks/              # Dynamic handle logic
+│   │   ├── store.js            # Zustand state
+│   │   └── ...
+│   └── package.json
+│
+├── backend/
+│   ├── app/
+│   │   ├── api/                # API routes
+│   │   ├── core/               # Config, logging, lifespan
+│   │   ├── middleware/         # Request logging
+│   │   ├── models/             # Pydantic models
+│   │   ├── services/           # Business logic
+│   │   ├── utils/              # Helpers
+│   │   └── main.py             # App bootstrap
+│   ├── tests/                  # Pytest suite
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+└── README.md
 ```
 
-#### Request:
-```
-{
-    "nodes": [...],
-    "edges": [...]
-}
-```
-#### Response:
+---
 
+## Tech Stack
+
+### Frontend
+
+* **React**
+* **React Flow**
+* **Zustand**
+* **Tailwind CSS**
+* **NextUI**
+* **React Icons**
+
+### Backend
+
+* **FastAPI**
+* **NetworkX**
+* **Pydantic**
+* **SlowAPI**
+* **Uvicorn**
+
+### Tooling
+
+* **pytest + pytest-cov**
+* **Docker**
+* **GitHub Actions**
+
+---
+
+## ▶Running Locally
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm start
 ```
-{
-    "num_nodes": 5,
-    "num_edges": 4,
-    "is_dag": true
-}
+
+Frontend runs at:
+`http://localhost:3000`
+
+---
+
+### Backend (Local)
+
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-## Technologies Used
+Backend runs at:
+`http://localhost:8000`
 
-### Frontend:
-- React
-- React Flow
-- NextUI
-- TailwindCSS
-- Zustand (state management)
-- React Toastify (for notifications)
+API Docs:
+`http://localhost:8000/api/docs`
 
-### Backend:
-- FastAPI
-- NetworkX (for DAG validation)
+---
+
+### Backend (Docker)
+
+```bash
+cd backend
+docker build -t pipeline-api .
+docker run -p 8000:8000 pipeline-api
+```
+
+---
+
+## Frontend ↔ Backend Integration
+
+When clicking **“Submit Pipeline”** in the frontend:
+
+* Nodes and edges are POSTed to:
+
+  ```
+  POST /pipelines/parse
+  ```
+* Backend returns:
+
+  ```json
+  {
+    "num_nodes": 4,
+    "num_edges": 3,
+    "is_dag": true,
+    "cycle": null
+  }
+  ```
+* Frontend displays the result as a toast notification
+
+---
+
+## Running Tests
+
+```bash
+cd backend
+pytest -v
+```
+
+With coverage:
+
+```bash
+pytest --cov=app --cov-report=term-missing
+```
+
+---
+
+## Continuous Integration
+
+CI is configured via **GitHub Actions**:
+
+* Runs on every push & PR to `main`
+* Installs dependencies
+* Runs full pytest suite with coverage
+
+Workflow file:
+
+```text
+.github/workflows/ci.yml
+```
+
+---
+
+## Backend API Endpoints
+
+### Health
+
+* `GET /` – Service info
+* `GET /health` – Health check
+
+### Pipeline
+
+* `POST /pipelines/parse` – Analyze pipeline DAG
+
+### Monitoring
+
+* `GET /metrics` – Cache stats & config
+
+---
+
+## Architecture Highlights
+
+* Schema-driven frontend nodes (no duplicated components)
+* Clean backend layering:
+
+  * Routes → Services → Models
+* Business logic isolated from HTTP
+* Cache abstraction ready for Redis
+* Testable, maintainable, scalable
+
+---
 
 ## Future Improvements
-- Add more customizable node types.
-- Improve validation of user inputs in nodes.
-- Enhance error handling for pipeline submission.
-- Imrove Styling
 
+* Redis cache
+* Auth (JWT / API keys)
+* API versioning
+* Persistent pipeline storage
+* Async workers
+* Deployment to Fly.io / AWS / GCP
 
+---
 
+## License
 
+This project is provided for **educational and evaluation purposes**.
+
+---
+
+## Author Notes
+
+This repository demonstrates:
+
+* Frontend abstraction & scalability
+* Backend architecture maturity
+* Production-grade practices
+* Testability & CI readiness
+
+Built with clarity, extensibility, and maintainability in mind.
