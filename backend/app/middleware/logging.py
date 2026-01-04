@@ -21,7 +21,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         path = request.url.path
 
         logger.info(
-            "📥 %s %s | client=%s",
+            "%s %s | client=%s",
             method,
             path,
             client_host,
@@ -34,7 +34,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             response.headers["X-Process-Time"] = f"{process_time:.6f}"
 
             logger.info(
-                "📤 %s %s | status=%s | %.3fs",
+                "%s %s | status=%s | %.3fs",
                 method,
                 path,
                 response.status_code,
@@ -47,7 +47,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             process_time = time.time() - start_time
 
             logger.exception(
-                "❌ %s %s | failed after %.3fs",
+                "%s %s | failed after %.3fs",
                 method,
                 path,
                 process_time,

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Starting %s", settings.APP_NAME)
+    logger.info("Starting %s", settings.APP_NAME)
     logger.info(
         "Config | MAX_NODES=%s | MAX_EDGES=%s | CACHE=%s",
         settings.MAX_NODES,
@@ -19,4 +19,4 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logger.info("🛑 Shutting down %s", settings.APP_NAME)
+    logger.info("Shutting down %s", settings.APP_NAME)
